@@ -1,0 +1,146 @@
+#########################################################################################
+#																					   #
+#					Script for Pepper Pot emittance measurement tests				  #
+#																					   #
+#########################################################################################
+
+#########################################################################################
+# Commands
+# g4bl scripts/pepperpot.g4bl last=1e7 spacing=25 holeR=0.5 L=100 nRows=9 ALUMINUM=1
+
+#################################### Global Settings ####################################
+physics QGSP_BIC_HP_EMX disable=Decay
+reference particle=mu+ referenceMomentum=28 beamX=0 beamY=0 beamZ=0
+param -unset histoFile=g4beamline
+param -unset first=1
+param -unset last=10000
+param -unset killer=1
+particlecolor pi+=0,0,1 mu+=1,0,0 e+=0,1,0 reference=1,0,0
+#########################################################################################
+
+######################################### Seed ##########################################
+param -unset SEED=0
+if $SEED>0
+	randomseed Set $SEED
+endif
+
+################################### Work directory ######################################
+param -unset workDir=/home/developer/Simulazioni/BeamTimeMEG/2022_06/PepperPotCheck
+
+################################# Elements Strengths ####################################
+param -unset QSKscale
+param -unset QSK41cur
+param -unset QSK41set=$QSKscale*$QSK41cur
+param -unset QSK42cur
+param -unset QSK42set=$QSKscale*$QSK42cur
+param -unset QSK43cur
+param -unset QSK43set=$QSKscale*$QSK43cur
+
+param -unset BTSset=-198.6/200
+param -unset COBRAset=1
+
+
+######################################## Beam ###########################################
+
+param -unset beamFile='InitPhaseSpace.root'
+param -unset beamName="ntuple"
+param -unset PILLdist=1117 # QSK43 center to PILL distance (MEG 2022 is 1117)
+param -unset poszQSK41=250
+param -unset poszQSK42=$poszQSK41+500
+param -unset poszQSK43=$poszQSK42+500
+# Mu3e param -unset poszSML41=$poszQSK43+250+32+149+200+411*0.5+6*3 # halfQSK + QSKpipe extrusion + flange + flange + halfSML + 3 O-rings
+param -unset poszSML41=$poszQSK43+250+32+149+411*0.5+6*2 # halfQSK + QSKpipe extrusion + flange + halfSML + 2 O-rings
+param -unset poszCOL=$poszSML41+155 # Guessed from Felix CMBL
+param -unset poszBTS=$poszQSK43+2607
+param -unset poszCOBRA=$poszBTS+3224
+param -unset poszPILL=$poszCOBRA
+
+param -unset beamPositionZ=0
+param -unset X0=0
+param -unset Xp0=0
+param -unset Y0=0
+param -unset Yp0=0
+
+beam root file=$beamFile firstEvent=$first lastEvent=$last beamZ=$beamPositionZ name=$beamName
+
+#########################################################################################
+
+######################################### QSK ###########################################
+param -unset FIELDMAPQSK
+fieldmap QSK file=$FIELDMAPQSK
+genericquad QSK41DUMMY kill=1 ironRadius=500 ironLength=400 ironColor=1,0,0,0.6 fieldLength=1 poleTipRadius=125 coilRadius=190 coilHalfwidth=55
+genericquad QSK42DUMMY kill=1 ironRadius=500 ironLength=400 ironColor=1,0,0,0.6 fieldLength=1 poleTipRadius=125 coilRadius=190 coilHalfwidth=55
+genericquad QSK43DUMMY kill=1 ironRadius=500 ironLength=400 ironColor=1,0,0,0.6 fieldLength=1 poleTipRadius=125 coilRadius=190 coilHalfwidth=55
+genericquad QSKDUMMY kill=1 ironRadius=500 ironLength=400 ironColor=1,0,0,0.6 fieldLength=1 apertureRadius=125
+#########################################################################################
+
+########################################## BTS ##########################################
+param -unset FIELDMAPBTS
+fieldmap BTS file=$FIELDMAPBTS
+#tubs BTSDUMMY kill=1 innerRadius=232.5 outerRadius=235.36 length=2808 material=Vacuum color=1,0,1,0.5 #2630
+tubs BTSDUMMY kill=1 innerRadius=320 outerRadius=2350.36 length=10 material=Vacuum color=1,0,1,0.5 #2630
+tubs BTSDUMMY1 kill=1 innerRadius=318*0.5 outerRadius=320 length=2800 material=Vacuum color=0.2,1,1,0.5 #2630
+#########################################################################################
+
+########################################## COBRA ##########################################
+param -unset FIELDMAPCOBRA
+fieldmap COBRA file=$FIELDMAPCOBRA
+tubs COBRADUMMY kill=1 innerRadius=318*0.5 outerRadius=351 length=2840 material=Vacuum color=1,0,1,0.5 #2630
+#########################################################################################
+
+######################################## MATERIAL #######################################
+# Degrader at BTS center is 300 um thick made of Mylar 1.395 g/cm3, 4 H - 5 C - 2 O
+material MYLARDEG H,0.041956464 C,0.62502368 O,0.33301986 density=1.395
+tubs DEGRADER outerRadius=318*0.5*0.9999999 length=0.3 material=MYLARDEG color=1,1,1,0.5
+
+# Vacuum window, 1420 mm US to COBRA center, 190 um thick made of Mylar 1.377 g/cm3
+material MYLARWIN H,0.041956464 C,0.62502368 O,0.33301986 density=1.377
+tubs WINDOW outerRadius=318*0.5*0.9999999 length=0.19 material=MYLARWIN color=0.5,1,1,0.5
+
+# EVAL window, 20 mm US to COBRA center, 20 um thick made of EVAL.
+# Considered EVOH F-F (chiedi Angela): 1.2 g/cm3, 32% ethylene content (68 mol C2H4O - 32 mol C2H4)
+# https://www.mitsui.com/de/en/business/plastics/__icsFiles/afieldfile/2021/05/26/01_eval_-_euen_1.pdf
+material EVAL H,0.10356168 C,0.61700364 O,0.27943468 density=1.20
+tubs WINEVAL outerRadius=318*0.5*0.9999999 length=0.02 material=EVAL color=1,0.5,1,0.5
+
+# Helium between the two windows. No sag is included at the moment
+material He Z=2 A=4.002602 density=0.000166322
+tubs HELIUM outerRadius=318*0.5*0.9999999 length=1420-20-0.01-0.095 material=He color=1,1,0.5,0.5
+
+# Air between EVAL and detector
+material Air AIR,1 density=0.00120479
+tubs cylAIR outerRadius=318*0.5*0.9999999 length=20-0.01 material=Air color=0.4,1,1,0.5
+
+# Insertion System
+tubs INSERT kill=1 innerRadius=85 outerRadius=320 length=20 material=Vacuum color=1,1,1,1 #2630
+#########################################################################################
+
+####################################### BEAMLINE ########################################
+
+#####################################################
+place QSK rename=QSK41 current=$QSK41set z=$poszQSK41
+place QSKDUMMY z=$poszQSK41 rename=QSK41DUMMY
+place QSK rename=QSK42 current=$QSK42set z=$poszQSK42
+place QSKDUMMY z=$poszQSK42 rename=QSK42DUMMY
+place QSK rename=QSK43 current=$QSK43set z=$poszQSK43
+place QSKDUMMY z=$poszQSK43 rename=QSK43DUMMY
+
+place BTS z=$poszBTS current=$BTSset
+#place DEGRADER z=$poszBTS
+place BTSDUMMY z=$poszBTS
+place BTSDUMMY1 z=$poszBTS
+
+#place WINDOW z=$poszCOBRA-1420
+
+#place HELIUM z=$poszCOBRA-719.95750
+#place INSERT z=$poszCOBRA-20
+#place WINEVAL z=$poszCOBRA-20
+#place cylAIR z=$poszCOBRA-9.995
+place COBRA z=$poszCOBRA current=$COBRAset
+place COBRADUMMY z=$poszCOBRA
+
+virtualdetector Det radius=250.0 length=10.0 color=1,1,0,0.2 filename='Pill'
+place Det rename=VirtualDetector1 z=$poszCOBRA
+
+param -unset profilename
+profile zloop=0:13000:10 filename=$profilename
