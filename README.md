@@ -32,3 +32,7 @@ You can install **madx-piE5-beamline** via `pip`. Ensure you have Python 3.7 or 
 
 ```bash
 pip install madx-piE5-beamline
+```
+
+## Documentation
+https://madx-pie5-beamline.readthedocs.io
