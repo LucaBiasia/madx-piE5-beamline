@@ -11,19 +11,29 @@ from globals import *
 
 def SampleEllipse(xmax, ymax, phi, theta, x0=0, y0=0):
     '''
-    Function that extrapolates the minor and major radius of a generic tilted ellipse (e.g. Phase space) knowing only the maximum of x and y.
-    Parameters
-    ----------
-        xmax : maximum of the x axis
-        ymax : maximum of the y axis
-        phi : angle of the tilted ellipse = arctan(2*alpha/(gamma-beta))/2
-        theta : rotating angle around the center (from 0 to 2*pi)
-        x0 : x coordinate of the centre of the ellipse
-        y0 : y coordinate of the centre of the ellipse
-    Returns
-    ---------
+    Extrapolates the minor and major radius of a generic tilted ellipse (e.g. phase space) knowing only the maximum of x and y.
+
+    Parameters:
+    -----------
+    xmax : float
+        Maximum of the x-axis.
+    ymax : float
+        Maximum of the y-axis.
+    phi : float
+        Angle of the tilted ellipse = arctan(2*alpha/(gamma-beta))/2.
+    theta : float
+        Rotating angle around the center (from 0 to 2*pi).
+    x0 : float, optional
+        x-coordinate of the center of the ellipse (default is 0).
+    y0 : float, optional
+        y-coordinate of the center of the ellipse (default is 0).
+
+    Returns:
+    --------
+    tuple
         Coordinate x and y of a generic point of the ellipse.
     '''
+    
     Ra = np.sqrt((xmax**2/np.cos(phi)**2-ymax**2*np.sin(phi)**2/np.cos(phi)**4)/(1-np.tan(phi)**4))
     Rb = np.sqrt((ymax**2-Ra**2*np.sin(phi)**2)/np.cos(phi)**2)
     x = Ra*np.cos(theta)*np.cos(phi) - Rb*np.sin(theta)*np.sin(phi) + x0
@@ -33,21 +43,27 @@ def SampleEllipse(xmax, ymax, phi, theta, x0=0, y0=0):
 
 def CreateNTuple(x, xp, y, yp, Ptot, PATH):
     '''
-    This function creates a Root NTuple already in a G4beamline format, given the sampled particles variables.
-    Parameters
-    ----------
-        x : sigma_x of the particles (m)
-        xp : x divergence of the particles (rad)
-        y : sigma_y of the particles (m)
-        yp : y divergence of the particles (rad)
-        Ptot : Total momentum of the sampled particles (Gev/c)
-        PATH : path to the folder to create the ROOT NTuple
-    Returns
-    ---------
-        A Root NTuple called InitPhaseSpace.root in the same folder
-    Also z and t should be included (for a non-continuous beam)
-    
-    N.B. This function requires TreeToNTuple.cpp file
+    Creates a Root NTuple in G4beamline format, given the sampled particles' variables. It requires TreeToNTuple.cpp file in the same directory.
+
+    Parameters:
+    -----------
+    x : numpy.ndarray
+        Sigma_x of the particles (m).
+    xp : numpy.ndarray
+        x divergence of the particles (rad).
+    y : numpy.ndarray
+        Sigma_y of the particles (m).
+    yp : numpy.ndarray
+        y divergence of the particles (rad).
+    Ptot : float
+        Total momentum of the sampled particles (GeV/c).
+    PATH : str
+        Path to the folder to create the ROOT NTuple.
+
+    Returns:
+    --------
+    int
+        Returns 0 after creating the Root NTuple called InitPhaseSpace.root in the specified folder.
     '''
     N = len(x)
 
@@ -90,8 +106,19 @@ def CreateNTuple(x, xp, y, yp, Ptot, PATH):
 
 def FieldGrid(fieldmap, skip):
     '''
-    This function creates a 6D grid of the given fieldmap
-    - skip is the number of lines of the header of the fieldmap 
+    Creates a 6D grid of the given fieldmap.
+
+    Parameters:
+    -----------
+    fieldmap : str
+        Path to the fieldmap file.
+    skip : int
+        Number of lines of the header of the fieldmap.
+
+    Returns:
+    --------
+    ndarray
+        Ndarray containing x, y, z, Bx, By, and Bz grids.
     '''
     fieldmap = fieldmap
     grid = np.loadtxt(fieldmap, dtype=str, skiprows=2, max_rows=1)
@@ -109,8 +136,19 @@ def FieldGrid(fieldmap, skip):
 
 def FieldGridAHSW(fieldmap, skip):
     '''
-    This function creates a 6D grid of the given fieldmap
-    - skip is the number of lines of the header of the fieldmap 
+    Creates a 6D grid of the AHSW41 fieldmap.
+
+    Parameters:
+    -----------
+    fieldmap : str
+        Path to the fieldmap file.
+    skip : int
+        Number of lines of the header of the fieldmap.
+
+    Returns:
+    --------
+    ndarray
+        Ndarray containing x, y, z, Bx, By, and Bz grids.
     '''
     fieldmap = fieldmap
     grid = np.loadtxt(fieldmap, dtype=str, skiprows=2, max_rows=1)
@@ -129,8 +167,19 @@ def FieldGridAHSW(fieldmap, skip):
 
 def BTSGrid(fieldmap, skip):
     '''
-    This function creates a 6D grid of the given fieldmap
-    - skip is the number of lines of the header of the fieldmap 
+    Creates a 6D grid of the BTS fieldmap.
+
+    Parameters:
+    -----------
+    fieldmap : str
+        Path to the fieldmap file.
+    skip : int
+        Number of lines of the header of the fieldmap.
+
+    Returns:
+    --------
+    ndarray
+        Ndarray containing r, z, Br, and Bz grids.
     '''
     fieldmap = fieldmap
     grid = np.loadtxt(fieldmap, dtype=str, skiprows=2, max_rows=1)
@@ -145,8 +194,19 @@ def BTSGrid(fieldmap, skip):
 
 def EffectiveLength(fieldmap, skip):
     '''
-    This function computes the effective length of a magnet for a given fieldmap
-    - skip is the number of lines of the header of the fieldmap 
+    Computes the effective length of a magnet for a given fieldmap.
+
+    Parameters:
+    -----------
+    fieldmap : str
+        Path to the fieldmap file.
+    skip : int
+        Number of lines of the header of the fieldmap.
+
+    Returns:
+    --------
+    float
+        Effective length of the magnet.
     '''
     _, _, Z, _, BY, _ = FieldGrid(fieldmap, skip)
     z = Z[1,0,:]
@@ -159,7 +219,21 @@ def EffectiveLength(fieldmap, skip):
 
 def InverseDrift(x_f, xp_f, L):
     '''
-    This function computes a backwards drift of length L, given the final phase space
+    Computes a backward drift of length L, given the final phase space.
+
+    Parameters:
+    -----------
+    x_f : float
+        Final x-coordinate.
+    xp_f : float
+        Final x divergence (rad).
+    L : float
+        Length of the drift.
+
+    Returns:
+    --------
+    tuple
+        x and x divergence after the drift.
     '''
     Sigma = np.array([[x_f**2, x_f*xp_f],
             [xp_f*x_f, xp_f**2]])
@@ -173,7 +247,17 @@ def InverseDrift(x_f, xp_f, L):
 
 def SumFunc(*args):
     '''
-    This function computes the summation of an arbitrary number of functions (e.g. splines)
+    Computes the summation of an arbitrary number of functions.
+
+    Parameters:
+    -----------
+    *args : function
+        Variable number of functions to be summed.
+
+    Returns:
+    --------
+    function
+        A function that computes the summation of the provided functions.
     '''
     def compute(x):
         func = 0
@@ -183,6 +267,32 @@ def SumFunc(*args):
     return compute
 
 def CreateSplines(REVERSE, POS_IN, POS_OUT, DX, P0, FIELDMAP_PATH):
+    '''
+    Creates splines for various multipole components based on fieldmaps.
+
+    Parameters:
+    -----------
+    REVERSE : float
+        Reverse factor.
+        1: forward propagation
+        -1: backwards propagation
+    POS_IN : float
+        Initial position in the forward direction.
+    POS_OUT : float
+        Final position in the forward direction.
+    DX : float
+        Slice spacing.
+    P0 : float
+        Initial momentum.
+    FIELDMAP_PATH : str
+        Path to the fieldmaps directory.
+
+    Returns:
+    --------
+    function
+        Slicing, dip_spline, quad_spline, sextu_spline, octu_spline, deca_spline, dodeca_spline, solenoids_spline.
+    """
+    '''
     L_TOT = POS_OUT - POS_IN
     f = 0.3/P0    # conversion factor from T/m to m^-2 (1/(B*rho))
     # quadrupoles and sextupoles
@@ -237,6 +347,33 @@ def CreateSplines(REVERSE, POS_IN, POS_OUT, DX, P0, FIELDMAP_PATH):
     return slicing, dip_spline, quad_spline, sextu_spline, octu_spline, deca_spline, dodeca_spline, solenoids_spline
 
 def BeamSampling(N_SAMPLE, N_G4BL, SIGMAX, SIGMAXP, SIGMAY, SIGMAYP, RHOX, RHOY):
+    '''
+    Samples beam particles in 4D phase space.
+
+    Parameters:
+    -----------
+    N_SAMPLE : int
+        Total number of sampled particles.
+    N_G4BL : int
+        Number of particles for G4beamline.
+    SIGMAX : float
+        Sigma_x (m).
+    SIGMAXP : float
+        Sigma_x divergence (rad).
+    SIGMAY : float
+        Sigma_y (m).
+    SIGMAYP : float
+        Sigma_y divergence (rad).
+    RHOX : float
+        Correlation coefficient for x (m mrad).
+    RHOY : float
+        Correlation coefficient for y (m mrad).
+
+    Returns:
+    --------
+    ndarray
+        x_ps, px_ps, y_ps, py_ps.
+    '''
     ex = SIGMAX*SIGMAXP*np.sqrt(1-RHOX**2)      # x emittance
     ey = SIGMAY*SIGMAYP*np.sqrt(1-RHOY**2)      # y emittance
     alfax = -RHOX*SIGMAX*SIGMAXP/ex
